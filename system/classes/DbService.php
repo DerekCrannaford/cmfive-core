@@ -382,4 +382,34 @@ class DbService {
         return $select;
     }
 
+    /**
+     * New cipher section to stop relying on custom implemented AES library
+     */
+
+    /**
+     * Returns encrypted string - requires mcrypt extension and openssl
+     *
+     * There is plenty of room for expansion here...
+     *
+     * If using less than PHP7.1, will use the function:
+     *     string mcrypt_[en|de]crypt(string $cipher, string $key, string $data, string $mode [, string $iv ])
+     * else will use:
+     *      string openssl_encrypt(string $data, string $method, string $key [, int $options = 0 [, string $iv = "" [, string &$tag = NULL [, string $aad = "" [, int $tag_length = 16 ]]]]])
+     */
+    public function encryptData($data, $key, $iv, $cipher = 'AES256') {
+        if (version_compare(PHP_VERSION, '7.1.0') >= 0) {
+            return openssl_encrypt($data, $cipher, $key, 0, $iv);
+        } else {
+            return mcrypt_encrypt($cipher, $key, $data, MCRYPT_MODE_CBC);
+        }
+    }
+
+    public function decryptData($data, $key, $iv, $cipher = 'AES256') {
+        if (version_compare(PHP_VERSION, '7.1.0') >= 0) {
+            return openssl_decrypt($data, $cipher, $key, 0, $iv);
+        } else {
+            return mcrypt_decrypt($cipher, $key, $data, MCRYPT_MODE_CBC);
+        }
+    }
+
 }

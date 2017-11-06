@@ -131,7 +131,7 @@ class EmailChannelOption extends DbObject {
 
     public function __construct(Web $w) {
         parent::__construct($w);
-        $this->setPassword(hash("md5", $w->moduleConf("channels", "__password")));
+        // $this->setPassword(hash("md5", $w->moduleConf("channels", "__password")));
     }
 
     public function delete($force = false) {

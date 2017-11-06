@@ -16,6 +16,9 @@ function edit_GET(Web $w) {
     // Decrypt username and password
     $email_channel->decrypt();
 
+    // $email_channel->s_username = $email_channel->decryptData($email_channel->s_username, Config::get('system.security.key'), Config::get('system.security.iv'));
+    // $email_channel->s_password = $email_channel->decryptData($email_channel->s_password, Config::get('system.security.key'), Config::get('system.security.iv'));
+
     $form["Email"] = array(
         array(
             array("Protocol", "select", "protocol", $email_channel->protocol, $email_channel::$_select_protocol)
@@ -80,6 +83,10 @@ function edit_POST(Web $w) {
 	$email_channel->allow_self_signed = !empty($_POST['allow_self_signed']) ? 1 : 0;
     $email_channel->port = (!empty($_POST['port']) ? intval($_POST['port']) : null);
     $email_channel->channel_id = $channel_object->id;
+
+    $email_channel->s_username = $email_channel->encryptData($email_channel->s_username, Config::get('system.security.key'), Config::get('system.security.iv'));
+    $email_channel->s_password = $email_channel->encryptData($email_channel->s_password, Config::get('system.security.key'), Config::get('system.security.iv'));
+
     $email_channel->insertOrUpdate();
 
     $w->msg("Email Channel " . ($channel_id ? "updated" : "created"), "/channels/listchannels");

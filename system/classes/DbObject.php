@@ -144,7 +144,9 @@ class DbObject extends DbService {
         foreach (get_object_vars($this) as $k => $v) {
             if (strpos($k, "s_") === 0) {
                 if ($v) {
-                    $this->$k = AESdecrypt($v, Config::get('system.password_salt'));
+                    $this->$k = $this->decryptData($v, Config::get('system.security.key'), Config::get('system.security.iv'));
+
+                    // $this->$k = AESdecrypt($v, Config::get('system.password_salt'));
                 }
             }
         }
@@ -1176,9 +1178,9 @@ class DbObject extends DbService {
             } else
                 return null;
         } else if (strpos($k, "s_") === 0) {
-            if (!empty($v)) {
-                return AESencrypt($v, Config::get('system.password_salt'));
-            }
+            // if (!empty($v)) {
+            //     return AESencrypt($v, Config::get('system.password_salt'));
+            // }
         }
         return $v;
     }
