@@ -35,9 +35,3 @@ Config::set('admin', array(
         "auth_user" => null
     )
 ));
-
-//======= define openssl encryption key and initialization vector ============
-Config::set("openssl", [
-    "key" => "lvewfopkkzsxnjjws1zc66rucgh8lt",
-    "iv"  => "ash17hr39fu12cva"
-]);

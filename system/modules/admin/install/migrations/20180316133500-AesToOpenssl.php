@@ -15,7 +15,18 @@ class AesToOpenssl extends CmfiveMigration {
         }*/
         
         // get only tables with encrypted values
-        $db = Config::get("database")["database"];
+        $db = Config::get("database.database");
+        if (empty($db)) {
+            throw new Exception('Database config not set');
+        }
+
+        $encryption_key = Config::get('system.encryption.key');
+        $encryption_iv = Config::get('system.encryption.iv');
+
+        if (empty($encryption_key) || empty($encryption_iv)) {
+            throw new Exception('Encryption key/iv is not set');
+        }
+
         $table = $this->w->db->query("select table_name, column_name from information_schema.columns 
             where table_schema='$db' and column_name like 's\_%';")->fetchAll();
         
@@ -23,53 +34,56 @@ class AesToOpenssl extends CmfiveMigration {
             return;
         }
         
-        foreach ($table as $row) {
-            foreach ($row as $key => $val) {
-                if (is_numeric($key)) {
-                    unset($row[$key]);
-                }
-            }
-            
-            $passwordSalt = null;
-            
-            $tableName = $row['table_name'];
-            $columnName = $row['column_name'];
-            
-            if ($tableName == "channel_email_option") {
-                $passwordSalt = hash("md5", $this->w->moduleConf("channels", "__password"));
-            }
-            
-            else if ($tableName == "report_connection") {
-                $passwordSalt = hash("md5", $this->w->moduleConf("report", "__password"));
-            }
-            
-            else {
-                $passwordSalt = md5('override this in your project config');
-            }
-            
-            $tbl = $this->w->db->query("select id, $columnName from $tableName")->fetchAll();
-            foreach ($tbl as $r) {
-                foreach ($r as $k => $v) {
-                    if (is_numeric($k)) {
-                        unset($r[$k]);
+        $this->w->db->startTransaction();
+
+        try {
+            foreach ($table as $row) {
+                foreach ($row as $key => $val) {
+                    if (is_numeric($key)) {
+                        unset($row[$key]);
                     }
-                }   
-                
-                $decrypted = null;
-                $encrypted = null;
-                
-                if ($up) {
-                    $decrypted = AESdecrypt($r[$columnName], $passwordSalt);
-                    $encrypted = openssl_encrypt($decrypted, "AES-256-CBC", Config::get("openssl")["key"], 0, Config::get("openssl")["iv"]);
                 }
                 
-                else {
-                    $decrypted = openssl_decrypt($r[$columnName], "AES-256-CBC", Config::get("openssl")["key"], 0, Config::get("openssl")["iv"]);
-                    $encrypted = AESencrypt($decrypted, $passwordSalt);
+                $passwordSalt = null;
+                
+                $tableName = $row['table_name'];
+                $columnName = $row['column_name'];
+                
+                if ($tableName == "channel_email_option") {
+                    $passwordSalt = hash("md5", $this->w->moduleConf("channels", "__password"));
+                } else if ($tableName == "report_connection") {
+                    $passwordSalt = hash("md5", $this->w->moduleConf("report", "__password"));
+                } else {
+                    $passwordSalt = md5('override this in your project config');
                 }
                 
-                $this->w->db->update($tableName, [$columnName => $encrypted])->where('id', $r['id'])->execute();
+                $tbl = $this->w->db->query("select id, $columnName from $tableName")->fetchAll();
+                foreach ($tbl as $r) {
+                    foreach ($r as $k => $v) {
+                        if (is_numeric($k)) {
+                            unset($r[$k]);
+                        }
+                    }   
+                    
+                    $decrypted = null;
+                    $encrypted = null;
+                    
+                    if ($up) {
+                        $decrypted = AESdecrypt($r[$columnName], $passwordSalt);
+                        $encrypted = openssl_encrypt($decrypted, "AES-256-CBC", $encryption_key, 0, $encryption_iv);
+                    } else {
+                        $decrypted = openssl_decrypt($r[$columnName], "AES-256-CBC", $encryption_key, 0, $encryption_iv);
+                        $encrypted = AESencrypt($decrypted, $passwordSalt);
+                    }
+                    
+                    $this->w->db->update($tableName, [$columnName => $encrypted])->where('id', $r['id'])->execute();
+                }
             }
+
+            $this->w->db->commitTransaction();
+        } catch (Exception $e) {
+            $this->w->db->rollbackTransaction();
+            throw $e;
         }
         
         /*foreach ($availableTables as $tableName) {

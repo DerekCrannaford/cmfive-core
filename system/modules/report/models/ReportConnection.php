@@ -18,7 +18,7 @@ class ReportConnection extends DbObject {
 
 	public function __construct(Web $w) {
 		parent::__construct($w);
-		$this->setPassword(hash("md5", $w->moduleConf("report", "__password")));
+		// $this->setPassword(hash("md5", $w->moduleConf("report", "__password")));
 	}
 	
 	/**

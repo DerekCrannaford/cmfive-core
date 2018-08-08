@@ -53,3 +53,9 @@ Config::set('system.gc_maxlifetime', 21600);
 
 // For SendGrid API integration (also used for Mandrill integration)
 // Config::append('email.api.credentials.key', '<your key>');
+
+//======= define openssl encryption key and initialization vector ============
+Config::set('system.encryption', [
+    'key' => '',
+    'iv'  => ''
+]);
