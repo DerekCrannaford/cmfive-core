@@ -639,28 +639,24 @@ class Web {
 			$this->ctx("msg", $this->session('msg'));
 			$this->sessionUnset('msg');
 			$this->ctx("w", $this);
-                        $this->ctx("cryptoException", "");
-                        
-                        // notify to move from AES to openSSL
-                        if (!$this->_is_installing && !$this->migrating) {
-                            // check if the migration is installed
-                            if ($this->Auth->loggedIn()) {
-                                if (PHP_VERSION_ID < 70100 && $this->Auth->user()->is_admin && !$this->Migration->isInstalled("AesToOpenssl")) {
-                                    // prompt admin to migrate from aes to openssl and continue using aes
-                                    $this->ctx("migrationMessage", 'To use cmfive with newer versions of PHP, migration from aes to openssl is needed');
-                                }
-                                
-                                else if (PHP_VERSION_ID >= 70100 && !$this->Migration->isInstalled("AesToOpenssl")) {
-                                    // display global message
-                                    // throw exceptions while encrypting / decrypting
-                                    $this->ctx("migrationMessage", 'Cmfive doesn´t support this version of PHP');
-                                }
-                                
-                                else {
-                                    $this->ctx("migrationMessage", "");
-                                }
-                            }
-                        }
+			$this->ctx("cryptoException", "");
+			
+			// notify to move from AES to openSSL
+			if (!$this->_is_installing && !$this->migrating) {
+				// check if the migration is installed
+				if ($this->Auth->loggedIn()) {
+					if (PHP_VERSION_ID < 70100 && $this->Auth->user()->is_admin && !$this->Migration->isInstalled("AesToOpenssl")) {
+						// prompt admin to migrate from aes to openssl and continue using aes
+						$this->ctx("migrationMessage", 'To be able to use cmfive with newer versions of PHP, please run migrations');
+					} else if (PHP_VERSION_ID >= 70100 && !$this->Migration->isInstalled("AesToOpenssl")) {
+						// display global message
+						// throw exceptions while encrypting / decrypting
+						$this->ctx("migrationMessage", 'Cmfive doesn\'t support this version of PHP without the "AesToOpenssl" migration, please revert to PHP7.0 or less and run migrations');
+					} else {
+						$this->ctx("migrationMessage", "");
+					}
+				}
+			}
 
 			try {
 				// call hooks, generic to specific
